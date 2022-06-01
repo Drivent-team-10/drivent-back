@@ -14,30 +14,38 @@ model User {
   id         Int          @id @default(autoincrement())
   email      String       @unique @db.VarChar(255)
   password   String       @db.VarChar(255)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
   Session    Session[]
   Enrollment Enrollment[]
+
+  @@map("users")
 }
 
 model Session {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  User      User     @relation(fields: [userId], references: [id])
-  token     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  User       User     @relation(fields: [userId], references: [id])
+  token      String
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  @@map("sessions")
 }
 
 model Event {
-  id                 Int      @id @default(autoincrement())
-  title              String   @db.VarChar(255)
-  backgroundImageUrl String   @db.VarChar(255)
-  logoImageUrl       String   @db.VarChar(255)
-  startsAt           DateTime
-  endsAt             DateTime
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                     Int      @id @default(autoincrement())
+  title                  String   @db.VarChar(255)
+  backgroundImageUrl     String   @db.VarChar(255) @map("background_image_url")
+  logoImageUrl           String   @db.VarChar(255) @map("logo_image_url")
+  startsAt               DateTime @map("starts_at")
+  endsAt                 DateTime @map("ends_at")
+  onlineEventValue       Int      @map("online_event_value")
+  presentialEventValue   Int      @map("presential_event_value")
+  createdAt              DateTime @default(now()) @map("created_at")
+  updatedAt              DateTime @updatedAt @map("updated_at")
+
+  @@map("events")
 }
 
 model Enrollment {
@@ -46,11 +54,15 @@ model Enrollment {
   cpf       String    @db.VarChar(255)
   birthday  DateTime
   phone     String    @db.VarChar(255)
-  userId    Int       @unique
+  userId    Int       @unique @map("user_id")
   User      User      @relation(fields: [userId], references: [id])
   Address   Address[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  Reservation Reservation[]
+
+  @@map("enrollments")
 }
 
 model Address {
@@ -61,9 +73,23 @@ model Address {
   state         String     @db.VarChar(255)
   number        String     @db.VarChar(255)
   neighborhood  String     @db.VarChar(255)
-  addressDetail String?    @db.VarChar(255)
-  enrollmentId  Int        @unique
+  addressDetail String?    @db.VarChar(255) @map("address_detail")
+  enrollmentId  Int        @unique @map("enrollment_id")
   Enrollment    Enrollment @relation(fields: [enrollmentId], references: [id])
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  @@map("addresses")
+}
+
+model Reservation {
+  id            Int      @id @default(autoincrement())
+  type          String   @db.VarChar(255)
+  accommodation Boolean  @default(false)
+  enrollmentId  Int        @unique @map("enrollment_id")
+  Enrollment    Enrollment @relation(fields: [enrollmentId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("reservation")
 }
