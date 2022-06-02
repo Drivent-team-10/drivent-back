@@ -1,36 +1,32 @@
-import dayjs from 'dayjs';
-import faker from '@faker-js/faker';
-import { Reservation, User } from '@prisma/client';
-import { prisma } from '@/config';
+import { User } from '@prisma/client';
 
 import { createEnrollmentWithAddress, createUser } from '../factories';
 import { ReservationInsertData } from '@/repositories/reservation-repository';
+import { createEvent } from './events-factory';
 
-export async function createReservationData(): Promise<{
+export async function createOnlineReservationData(
+  type: string,
+  accommodation: boolean,
+): Promise<{
   user: User;
   reservationInsertData: ReservationInsertData;
 }> {
   const user = await createUser();
   const enrollment = await createEnrollmentWithAddress(user);
+  const event = await createEvent();
+
+  const amount = type === 'online' ? event.onlineEventValue : event.presentialEventValue;
 
   const reservationInsertData = {
-    type: 'online',
-    accommodation: false,
+    type,
+    eventId: event.id,
+    accommodation,
     enrollmentId: enrollment.id,
+    amount,
   };
 
   return {
     user,
     reservationInsertData,
   };
-
-  // prisma.reservation.create({
-  //   data: {
-  //     title: params.title || faker.lorem.sentence(),
-  //     backgroundImageUrl: params.backgroundImageUrl || faker.image.imageUrl(),
-  //     logoImageUrl: params.logoImageUrl || faker.image.imageUrl(),
-  //     startsAt: params.startsAt || dayjs().subtract(1, 'day').toDate(),
-  //     endsAt: params.endsAt || dayjs().add(5, 'days').toDate(),
-  //   },
-  // });
 }

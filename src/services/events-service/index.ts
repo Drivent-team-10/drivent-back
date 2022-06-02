@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 
 async function getFirstEvent(): Promise<GetFirstEventResult> {
   const event = await eventRepository.findFirst();
+
   if (!event) throw notFoundError();
 
   return exclude(event, 'createdAt', 'updatedAt');

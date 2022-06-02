@@ -1,10 +1,12 @@
+import { AuthenticatedRequest } from '@/middlewares';
 import reservationService from '@/services/reservation-service';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import httpStatus from 'http-status';
 
-export async function reservationsPost(req: Request, res: Response) {
-  const { type, accommodation, enrollmentId } = req.body;
+export async function reservationsPost(req: AuthenticatedRequest, res: Response) {
+  const { type, accommodation } = req.body;
+  const { userId } = req;
 
-  const reservation = await reservationService.createNewReservation({ type, accommodation, enrollmentId });
+  const reservation = await reservationService.createNewReservation({ type, accommodation: !!accommodation, userId });
   res.status(httpStatus.CREATED).json(reservation);
 }

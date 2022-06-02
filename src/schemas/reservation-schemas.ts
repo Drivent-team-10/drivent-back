@@ -6,5 +6,4 @@ export const createReservationSchema = Joi.object<ReservationInsertData>({
     .pattern(/^online$|^presential$/)
     .required(),
   accommodation: Joi.boolean(),
-  enrollmentId: Joi.number().integer().required(),
 });

@@ -2,11 +2,11 @@ import app, { init } from '@/app';
 import supertest from 'supertest';
 import * as jwt from 'jsonwebtoken';
 
-import { createEnrollmentWithAddress, createUser } from '../factories';
+import { createUser } from '../factories';
 import { cleanDb, generateValidToken } from '../helpers';
 import httpStatus from 'http-status';
 import faker from '@faker-js/faker';
-import { createReservationData } from '../factories/reservation-factory';
+import { createOnlineReservationData } from '../factories/reservation-factory';
 
 beforeAll(async () => {
   await init();
@@ -16,8 +16,12 @@ beforeAll(async () => {
 const server = supertest(app);
 
 describe('POST /reservations', () => {
+  beforeEach(async () => {
+    await cleanDb();
+  });
+
   it('should respond with status 401 if no token is given', async () => {
-    const createdData = await createReservationData();
+    const createdData = await createOnlineReservationData('online', false);
     const { reservationInsertData } = createdData;
 
     const response = await server.post('/reservations').send({
@@ -33,7 +37,6 @@ describe('POST /reservations', () => {
     const response = await server.post('/reservations').set('Authorization', `Bearer ${token}`).send({
       type: 'online',
       accommodation: false,
-      enrollmentId: 1,
     });
 
     expect(response.status).toBe(httpStatus.UNAUTHORIZED);
@@ -43,30 +46,45 @@ describe('POST /reservations', () => {
     const userWithoutSession = await createUser();
     const token = jwt.sign({ userId: userWithoutSession.id }, process.env.JWT_SECRET);
 
-    const createdData = await createReservationData();
+    const createdData = await createOnlineReservationData('online', false);
     const { reservationInsertData } = createdData;
 
-    const response = await server
-      .post('/reservations')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        ...reservationInsertData,
-      });
+    const response = await server.post('/reservations').set('Authorization', `Bearer ${token}`).send({
+      type: reservationInsertData.type,
+      accommodation: reservationInsertData.accommodation,
+    });
 
     expect(response.status).toBe(httpStatus.UNAUTHORIZED);
   });
 
-  it('should respond with status 201 when online reservation is done', async () => {
-    const createdData = await createReservationData();
+  it('should respond with status 400 when there is no body', async () => {
+    const createdData = await createOnlineReservationData('online', false);
+    const { user } = createdData;
+    const token = await generateValidToken(user);
+
+    const response = await server.post('/reservations').set('Authorization', `Bearer ${token}`).send();
+
+    expect(response.status).toBe(httpStatus.BAD_REQUEST);
+  });
+
+  it('should respond with status 400 for invalid body', async () => {
+    const createdData = await createOnlineReservationData('online', false);
+    const { user } = createdData;
+    const token = await generateValidToken(user);
+
+    const response = await server.post('/reservations').set('Authorization', `Bearer ${token}`).send({});
+
+    expect(response.status).toBe(httpStatus.BAD_REQUEST);
+  });
+
+  it('should respond with status 201 when there is no hosting data and the ticket is online', async () => {
+    const createdData = await createOnlineReservationData('online', false);
     const { user, reservationInsertData } = createdData;
     const token = await generateValidToken(user);
 
-    const response = await server
-      .post('/reservations')
-      .set('Authorization', `Bearer ${token}`)
-      .send({
-        ...reservationInsertData,
-      });
+    const response = await server.post('/reservations').set('Authorization', `Bearer ${token}`).send({
+      type: 'online',
+    });
 
     expect(response.status).toBe(httpStatus.CREATED);
     expect(response.body).toEqual(
@@ -75,6 +93,54 @@ describe('POST /reservations', () => {
         enrollmentId: reservationInsertData.enrollmentId,
         type: 'online',
         accommodation: false,
+        amount: reservationInsertData.amount,
+        eventId: reservationInsertData.eventId,
+      }),
+    );
+  });
+
+  it('should respond with status 201 when online reservation is done', async () => {
+    const createdData = await createOnlineReservationData('online', false);
+    const { user, reservationInsertData } = createdData;
+    const token = await generateValidToken(user);
+
+    const response = await server.post('/reservations').set('Authorization', `Bearer ${token}`).send({
+      type: reservationInsertData.type,
+      accommodation: reservationInsertData.accommodation,
+    });
+
+    expect(response.status).toBe(httpStatus.CREATED);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        id: response.body.id,
+        enrollmentId: reservationInsertData.enrollmentId,
+        type: 'online',
+        accommodation: false,
+        amount: reservationInsertData.amount,
+        eventId: reservationInsertData.eventId,
+      }),
+    );
+  });
+
+  it('should respond with status 201 when the body is valid and the ticket is presential', async () => {
+    const createdData = await createOnlineReservationData('presential', true);
+    const { user, reservationInsertData } = createdData;
+    const token = await generateValidToken(user);
+
+    const response = await server.post('/reservations').set('Authorization', `Bearer ${token}`).send({
+      type: 'presential',
+      accommodation: true,
+    });
+
+    expect(response.status).toBe(httpStatus.CREATED);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        id: response.body.id,
+        enrollmentId: reservationInsertData.enrollmentId,
+        type: 'presential',
+        accommodation: true,
+        amount: reservationInsertData.amount,
+        eventId: reservationInsertData.eventId,
       }),
     );
   });
