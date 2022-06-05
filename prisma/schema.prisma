@@ -51,16 +51,16 @@ model Event {
 }
 
 model Enrollment {
-  id        Int       @id @default(autoincrement())
-  name      String    @db.VarChar(255)
-  cpf       String    @db.VarChar(255)
-  birthday  DateTime
-  phone     String    @db.VarChar(255)
-  userId    Int       @unique @map("user_id")
-  User      User      @relation(fields: [userId], references: [id])
-  Address   Address[]
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  id          Int       @id @default(autoincrement())
+  name        String    @db.VarChar(255)
+  cpf         String    @db.VarChar(255)
+  birthday    DateTime
+  phone       String    @db.VarChar(255)
+  userId      Int       @unique @map("user_id")
+  User        User      @relation(fields: [userId], references: [id])
+  Address     Address[]
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   Reservation Reservation[]
 
@@ -96,5 +96,21 @@ model Reservation {
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 
-  @@map("reservation")
+  Payment       Payment[]
+
+  @@map("reservations")
+}
+
+model Payment {
+  id              Int        @id @default(autoincrement())
+  number          String     @db.VarChar(255)
+  name            String
+  validThru       DateTime
+  cvc             String
+  reservationId   Int        @map("reservation_id")
+  Reservation     Reservation      @relation(fields: [reservationId], references: [id])
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@map("payments")
 }

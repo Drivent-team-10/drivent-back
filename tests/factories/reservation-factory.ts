@@ -1,4 +1,5 @@
 import { User } from '@prisma/client';
+import { prisma } from '@/config';
 
 import { createEnrollmentWithAddress, createUser } from '../factories';
 import { ReservationInsertData } from '@/repositories/reservation-repository';
@@ -28,5 +29,20 @@ export async function createOnlineReservationData(
   return {
     user,
     reservationInsertData,
+  };
+}
+
+export async function insertOnlineReservation() {
+  const reservation = await createOnlineReservationData('online', false);
+
+  const { user, reservationInsertData } = reservation;
+
+  const insertedReservation = await prisma.reservation.create({
+    data: reservationInsertData,
+  });
+
+  return {
+    user,
+    insertedReservation,
   };
 }
