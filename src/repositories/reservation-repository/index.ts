@@ -9,8 +9,15 @@ async function createReservation(reservationData: ReservationInsertData): Promis
   });
 }
 
+async function findById(id: number): Promise<Reservation> {
+  return prisma.reservation.findFirst({
+    where: { id },
+  });
+}
+
 const reservationRepository = {
   createReservation,
+  findById,
 };
 
 export default reservationRepository;

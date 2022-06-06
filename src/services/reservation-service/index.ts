@@ -36,8 +36,19 @@ async function createNewReservation(reservationData: ReservationData) {
   return reservation;
 }
 
+async function findReservationById(id: number) {
+  const reservation = await reservationRepository.findById(id);
+
+  if (!reservation) {
+    throw notFoundError();
+  }
+
+  return reservation;
+}
+
 const reservationService = {
   createNewReservation,
+  findReservationById,
 };
 
 export default reservationService;

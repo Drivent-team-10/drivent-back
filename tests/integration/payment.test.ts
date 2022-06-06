@@ -6,6 +6,7 @@ import { cleanDb, generateValidToken } from '../helpers';
 import httpStatus from 'http-status';
 import faker from '@faker-js/faker';
 import { createPaymentData, insertPayment } from '../factories/payment-factory';
+import dayjs from 'dayjs';
 
 beforeAll(async () => {
   await init();
@@ -90,6 +91,24 @@ describe('POST /reservations/:id/payment', () => {
       });
 
     expect(response.status).toBe(httpStatus.BAD_REQUEST);
+  });
+
+  it('should respond with status 403 for invalid date', async () => {
+    const payment = await createPaymentData();
+    const { user, reservationId, paymentInsertData } = payment;
+    const token = await generateValidToken(user);
+
+    const dateNow = new Date();
+    paymentInsertData.validThru = dayjs(dateNow).subtract(1, 'year').format('MM/YY');
+
+    const response = await server
+      .post(`/reservations/${reservationId}/payment`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        ...paymentInsertData,
+      });
+
+    expect(response.status).toBe(httpStatus.FORBIDDEN);
   });
 
   it('should respond with 409 status when payment is already made', async () => {

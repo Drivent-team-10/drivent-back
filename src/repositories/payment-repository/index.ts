@@ -9,8 +9,15 @@ async function createPayment(paymentData: PaymentInsertData): Promise<Payment> {
   });
 }
 
+async function findPaymentByReservationId(reservationId: number): Promise<Payment> {
+  return prisma.payment.findFirst({
+    where: { reservationId },
+  });
+}
+
 const paymentRepository = {
   createPayment,
+  findPaymentByReservationId,
 };
 
 export default paymentRepository;

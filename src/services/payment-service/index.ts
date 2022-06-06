@@ -1,43 +1,54 @@
-import { notFoundError } from '@/errors';
-import reservationRepository from '@/repositories/reservation-repository';
-import { Reservation } from '@prisma/client';
-import enrollmentsService from '../enrollments-service';
-import eventsService from '../events-service';
+import bcrypt from 'bcrypt';
+import dayjs from 'dayjs';
 
-export type ReservationType = 'online' | 'presential';
+import { conflictError, forbiddenError, notFoundError } from '@/errors';
+import paymentRepository, { PaymentInsertData } from '@/repositories/payment-repository';
+import { Payment } from '@prisma/client';
+import reservationService from '../reservation-service';
 
-export interface ReservationData {
-  type: ReservationType;
-  accommodation: boolean;
-  userId: number;
+async function verifyExpirationDate(expirationDate: string): Promise<void> {
+  const now = dayjs().format('MM/YY');
+  const isExpired = dayjs(now) > dayjs(expirationDate);
+
+  if (isExpired) {
+    throw forbiddenError('Date expired!');
+  }
 }
 
-async function createNewReservation(reservationData: ReservationData) {
-  const { type, accommodation, userId } = reservationData;
+async function createNewPayment(paymentData: PaymentInsertData): Promise<Payment> {
+  const { number, name, validThru, cvc, reservationId } = paymentData;
 
-  const enrollment = await enrollmentsService.findEnrollmentByUserId(userId);
+  const reservation = await reservationService.findReservationById(reservationId);
 
-  if (!enrollment) {
+  if (!reservation) {
     throw notFoundError();
   }
 
-  const event = await eventsService.getFirstEvent(); // Because the application manages only one event at the moment
+  const paymentSearch = await paymentRepository.findPaymentByReservationId(reservationId);
 
-  const amount = type === 'online' ? event.onlineEventValue : event.presentialEventValue;
+  if (paymentSearch) {
+    throw conflictError('Payment already made');
+  }
 
-  const reservation: Reservation = await reservationRepository.createReservation({
-    type,
-    accommodation,
-    enrollmentId: enrollment.id,
-    eventId: event.id,
-    amount,
+  await verifyExpirationDate(validThru);
+
+  const hashNumber = bcrypt.hashSync(number, 10);
+
+  const hashCvc = bcrypt.hashSync(cvc, 10);
+
+  const payment: Payment = await paymentRepository.createPayment({
+    number: hashNumber,
+    name,
+    validThru,
+    cvc: hashCvc,
+    reservationId,
   });
 
-  return reservation;
+  return payment;
 }
 
-const reservationService = {
-  createNewReservation,
+const paymentService = {
+  createNewPayment,
 };
 
-export default reservationService;
+export default paymentService;

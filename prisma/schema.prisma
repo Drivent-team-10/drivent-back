@@ -105,7 +105,7 @@ model Payment {
   id              Int        @id @default(autoincrement())
   number          String     @db.VarChar(255)
   name            String
-  validThru       DateTime
+  validThru       String
   cvc             String
   reservationId   Int        @map("reservation_id")
   Reservation     Reservation      @relation(fields: [reservationId], references: [id])
