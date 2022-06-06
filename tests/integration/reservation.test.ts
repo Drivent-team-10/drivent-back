@@ -69,10 +69,12 @@ describe('POST /reservations', () => {
 
   it('should respond with status 400 for invalid body', async () => {
     const createdData = await createOnlineReservationData('online', false);
-    const { user } = createdData;
+    const { user, reservationInsertData } = createdData;
     const token = await generateValidToken(user);
 
-    const response = await server.post('/reservations').set('Authorization', `Bearer ${token}`).send({});
+    const response = await server.post('/reservations').set('Authorization', `Bearer ${token}`).send({
+      accommodation: reservationInsertData.accommodation,
+    });
 
     expect(response.status).toBe(httpStatus.BAD_REQUEST);
   });
